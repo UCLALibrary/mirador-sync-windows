@@ -1,0 +1,1 @@
+# mirador-synchronized-windows
