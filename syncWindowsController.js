@@ -3,7 +3,7 @@
   /*
    * Class that handles window sychrnonization.
    *
-   * Format of synchronizedWindows:
+   * Format of syncWindows:
    *
    * {
    *   keys: [ groupID1, ...],
@@ -32,10 +32,10 @@
    * }
    *
    */
-  $.SynchronizedWindowsController = function(options) {
+  $.SyncWindowsController = function(options) {
 
     jQuery.extend(true, this, {
-      synchronizedWindows: null,
+      syncWindows: null,
       state: null,
       eventEmitter: null,
     }, options);
@@ -43,26 +43,26 @@
     this.init();
   };
 
-  $.SynchronizedWindowsController.prototype = {
+  $.SyncWindowsController.prototype = {
     init: function () {
       var _this = this;
-      var savedSettings = _this.state.getStateProperty('synchronizedWindowGroupsState');
+      var savedSettings = _this.state.getStateProperty('syncWindowGroupsState');
 
       if (savedSettings !== undefined) {
-        _this.synchronizedWindows = JSON.parse(savedSettings);
-        // the views array will be restored by each window, starting with the restoreWindowToSynchronizedWindowGroups
+        _this.syncWindows = JSON.parse(savedSettings);
+        // the views array will be restored by each window, starting with the restoreWindowToSyncWindowGroups
         // eventEmitter message
       }
       else {
         // new settings object
-        _this.synchronizedWindows = { keys: [], byGroup: {}, byWindow: {} };
+        _this.syncWindows = { keys: [], byGroup: {}, byWindow: {} };
       }
       _this.listenForActions();
     },
 
     // TODO: remove after refactor; might be useful if we change the underlying data structure
-    getSynchronizedWindowGroupOfWindow: function(viewObj) {
-      return this.synchronizedWindows.byWindow[viewObj.windowId];
+    getSyncWindowGroupOfWindow: function(viewObj) {
+      return this.syncWindows.byWindow[viewObj.windowId];
     },
 
     lockOptions: {
@@ -139,24 +139,24 @@
       /*
        * Simply sends synchronized window group data.
        */
-      _this.eventEmitter.subscribe('windowReadyForSynchronizedWindowGroups', function(event) {
-        _this.eventEmitter.publish('updateSynchronizedWindowGroupMenus', _this.synchronizedWindows);
+      _this.eventEmitter.subscribe('windowReadyForSyncWindowGroups', function(event) {
+        _this.eventEmitter.publish('updateSyncWindowGroupMenus', _this.syncWindows);
       });
 
       /*
-       * Creates a new synchronized window group. Published by synchronizedWindowGroupsPanel.
+       * Creates a new synchronized window group. Published by syncWindowsPanel.
        *
        * @param {string} name Name of new synchronized window group.
        */
-      _this.eventEmitter.subscribe('createSynchronizedWindowGroup', function(event, name) {
+      _this.eventEmitter.subscribe('createSyncWindowGroup', function(event, name) {
         // update data model
-        _this.createSynchronizedWindowGroup(name);
+        _this.createSyncWindowGroup(name);
 
-        // notify windows and synchronizedWindowGroupMenu that data model is updated, so they can update DOM
-        _this.eventEmitter.publish('updateSynchronizedWindowGroupMenus', _this.synchronizedWindows);
+        // notify windows and syncWindowGroupMenu that data model is updated, so they can update DOM
+        _this.eventEmitter.publish('updateSyncWindowGroupMenus', _this.syncWindows);
 
         // notify saveController that settings have changed
-        _this.eventEmitter.publish('synchronizedWindowGroupsStateChanged', _this.synchronizedWindows);
+        _this.eventEmitter.publish('syncWindowGroupsStateChanged', _this.syncWindows);
       });
 
       /*
@@ -164,10 +164,10 @@
        *
        * @param {string} name Name of the synchronized window group to delete.
        */
-      _this.eventEmitter.subscribe('deleteSynchronizedWindowGroup', function(event, name) {
-        _this.deleteSynchronizedWindowGroup(name);
-        _this.eventEmitter.publish('updateSynchronizedWindowGroupMenus', _this.synchronizedWindows);
-        _this.eventEmitter.publish('synchronizedWindowGroupsStateChanged', _this.synchronizedWindows);
+      _this.eventEmitter.subscribe('deleteSyncWindowGroup', function(event, name) {
+        _this.deleteSyncWindowGroup(name);
+        _this.eventEmitter.publish('updateSyncWindowGroupMenus', _this.syncWindows);
+        _this.eventEmitter.publish('syncWindowGroupsStateChanged', _this.syncWindows);
       });
 
       /*
@@ -175,21 +175,21 @@
        *
        * @param {Object} data Contains:
        *     viewObj: viewobject to add
-       *     synchronizedWindowGroup: name of synchronizedWindowGroup to add it to
+       *     syncWindowGroup: name of syncWindowGroup to add it to
        */
-      _this.eventEmitter.subscribe('addToSynchronizedWindowGroup', function(event, data) {
-        _this.addToSynchronizedWindowGroup(data.viewObj, data.synchronizedWindowGroup);
-        _this.eventEmitter.publish('synchronizedWindowGroupsStateChanged', _this.synchronizedWindows);
+      _this.eventEmitter.subscribe('addToSyncWindowGroup', function(event, data) {
+        _this.addToSyncWindowGroup(data.viewObj, data.syncWindowGroup);
+        _this.eventEmitter.publish('syncWindowGroupsStateChanged', _this.syncWindows);
       });
 
       /*
-       * Removes the given viewobject from its synchronizedWindowGroup.
+       * Removes the given viewobject from its syncWindowGroup.
        *
        * @param {Object} data Wrapper for the viewobject to free
        */
-      _this.eventEmitter.subscribe('removeFromSynchronizedWindowGroup', function(event, data) {
-        _this.removeFromSynchronizedWindowGroup(data.viewObj);
-        _this.eventEmitter.publish('synchronizedWindowGroupsStateChanged', _this.synchronizedWindows);
+      _this.eventEmitter.subscribe('removeFromSyncWindowGroup', function(event, data) {
+        _this.removeFromSyncWindowGroup(data.viewObj);
+        _this.eventEmitter.publish('syncWindowGroupsStateChanged', _this.syncWindows);
       });
 
       /*
@@ -282,21 +282,21 @@
        * Handle the request from the DOM to toggle settings for a synchronized window group.
        *
        * @param {Object} data Contains
-       *     groupID: synchronizedWindowGroup to focus on
+       *     groupID: syncWindowGroup to focus on
        *     key: setting to change
        */
-      _this.eventEmitter.subscribe('toggleSynchronizedWindowGroupSettings', function(event, data) {
-        _this.toggleSynchronizedWindowGroupSettings(data.groupID, data.key, data.value);
+      _this.eventEmitter.subscribe('toggleSyncWindowGroupSettings', function(event, data) {
+        _this.toggleSyncWindowGroupSettings(data.groupID, data.key, data.value);
 
         // notify saveController that settings have changed
-        _this.eventEmitter.publish('synchronizedWindowGroupsStateChanged', _this.synchronizedWindows);
+        _this.eventEmitter.publish('syncWindowGroupsStateChanged', _this.syncWindows);
       });
 
       /*
-       * Sends synchronizedWindowGroup data to the DOM. Received upon initialization of the synchronizedWindowGroupPanel
+       * Sends syncWindowGroup data to the DOM. Received upon initialization of the syncWindowGroupPanel
        */
-      _this.eventEmitter.subscribe('synchronizedWindowGroupsPanelReady', function(event) {
-        _this.eventEmitter.publish('updateSynchronizedWindowGroupMenus', _this.synchronizedWindows);
+      _this.eventEmitter.subscribe('syncWindowsPanelReady', function(event) {
+        _this.eventEmitter.publish('updateSyncWindowGroupMenus', _this.syncWindows);
       });
 
       /*
@@ -305,12 +305,12 @@
        *
        * @param {Object} viewObj The viewobject to check
        */
-      _this.eventEmitter.subscribe('restoreWindowToSynchronizedWindowController', function(event, viewObj) {
+      _this.eventEmitter.subscribe('restoreWindowToSyncWindowController', function(event, viewObj) {
         // check if this window is in a synchronized window group
-        var groupID = _this.getSynchronizedWindowGroupOfWindow(viewObj);
+        var groupID = _this.getSyncWindowGroupOfWindow(viewObj);
         if (groupID !== undefined) {
-          _this.synchronizedWindows.byGroup[groupID].views.push(viewObj);
-          _this.eventEmitter.publish('activateSynchronizedWindowGroupMenuItem.' + viewObj.windowId, groupID);
+          _this.syncWindows.byGroup[groupID].views.push(viewObj);
+          _this.eventEmitter.publish('activateSyncWindowGroupMenuItem.' + viewObj.windowId, groupID);
         }
       });
     },
@@ -320,10 +320,10 @@
      *
      * @param {string} name Name of the new synchronized window group to create
      */
-    createSynchronizedWindowGroup: function(name) {
+    createSyncWindowGroup: function(name) {
       var _this = this;
-      if (_this.synchronizedWindows.byGroup[name] === undefined) {
-        _this.synchronizedWindows.byGroup[name] = {
+      if (_this.syncWindows.byGroup[name] === undefined) {
+        _this.syncWindows.byGroup[name] = {
           views: [],
           settings: {
             profile: 'dimensionalLockMirror',
@@ -340,7 +340,7 @@
         };
 
         // add to keys array
-        _this.synchronizedWindows.keys.push(name);
+        _this.syncWindows.keys.push(name);
       } else {
         // throw error
         alert("There is already a synchronized window group with that name!");
@@ -352,54 +352,54 @@
      *
      * @param {string} name Name of the synchronized window group to delete
      */
-    deleteSynchronizedWindowGroup: function(name) {
+    deleteSyncWindowGroup: function(name) {
       var _this = this;
-      delete _this.synchronizedWindows.byGroup[name];
+      delete _this.syncWindows.byGroup[name];
 
       // go thru the byWindow object and delete any keys that have name as the value
-      jQuery.each(_this.synchronizedWindows.byWindow, function(k, v) {
+      jQuery.each(_this.syncWindows.byWindow, function(k, v) {
         if (v === name) {
-          delete _this.synchronizedWindows.byWindow[k];
+          delete _this.syncWindows.byWindow[k];
         }
       });
 
       // delete from keys array
-      var idx = _this.synchronizedWindows.keys.indexOf(name);
+      var idx = _this.syncWindows.keys.indexOf(name);
       if (idx !== -1) {
-        _this.synchronizedWindows.keys.splice(idx, 1);
+        _this.syncWindows.keys.splice(idx, 1);
       }
     },
 
     /*
      * Adds a viewobject to a synchronized window group
      *
-     * @param {Object} viewObj The viewobject to add to the synchronizedWindowGroup
-     * @param {string} synchronizedWindowGroup The synchronizedWindowGroup to append the viewobject to
+     * @param {Object} viewObj The viewobject to add to the syncWindowGroup
+     * @param {string} syncWindowGroup The syncWindowGroup to append the viewobject to
      */
-    addToSynchronizedWindowGroup: function(viewObj, synchronizedWindowGroup) {
+    addToSyncWindowGroup: function(viewObj, syncWindowGroup) {
       var _this = this;
       // check to see if the window is already synced
-      _this.removeFromSynchronizedWindowGroup(viewObj);
+      _this.removeFromSyncWindowGroup(viewObj);
 
-      // add to synchronizedWindowGroups
-      _this.synchronizedWindows.byGroup[synchronizedWindowGroup].views.push(viewObj);
-      _this.synchronizedWindows.byWindow[viewObj.windowId] = synchronizedWindowGroup;
+      // add to syncWindowGroups
+      _this.syncWindows.byGroup[syncWindowGroup].views.push(viewObj);
+      _this.syncWindows.byWindow[viewObj.windowId] = syncWindowGroup;
     },
 
     /*
-     * Removes a viewobject from its synchronizedWindowGroup
+     * Removes a viewobject from its syncWindowGroup
      *
      * @param {Object} viewObj The viewobject to free
      */
-    removeFromSynchronizedWindowGroup: function(viewObj) {
+    removeFromSyncWindowGroup: function(viewObj) {
       var _this = this,
-      synchronizedWindowGroup = _this.synchronizedWindows.byWindow[viewObj.windowId],
+      syncWindowGroup = _this.syncWindows.byWindow[viewObj.windowId],
       lgArr,
       idx;
-      if (synchronizedWindowGroup !== undefined) {
+      if (syncWindowGroup !== undefined) {
 
         // remove from byGroup
-        lgArr = _this.synchronizedWindows.byGroup[synchronizedWindowGroup].views;
+        lgArr = _this.syncWindows.byGroup[syncWindowGroup].views;
         jQuery.each(lgArr, function(i, e) {
           if (e.windowId === viewObj.windowId) {
             idx = i;
@@ -409,12 +409,12 @@
         lgArr.splice(idx, 1);
 
         // remove from byWindow
-        delete _this.synchronizedWindows.byWindow[viewObj.windowId];
+        delete _this.syncWindows.byWindow[viewObj.windowId];
       }
     },
 
     /*
-     * Sets the settings of the synchronizedWindowGroup.
+     * Sets the settings of the syncWindowGroup.
      * If key is 'profile', value must be one of the lock profiles
      * Otherwise, param value will be unused.
      *
@@ -422,10 +422,10 @@
      * @param {string} key The name of the setting to toggle
      * @param {string} value Only used to set the lockProfile (e.g., 'dimensionalLockMirror')
      */
-    toggleSynchronizedWindowGroupSettings: function(groupID, key, value) {
+    toggleSyncWindowGroupSettings: function(groupID, key, value) {
 
       var _this = this;
-      var settings = _this.synchronizedWindows.byGroup[groupID].settings,
+      var settings = _this.syncWindows.byGroup[groupID].settings,
       currentSetting = settings[key];
 
       switch (key) {
@@ -460,8 +460,8 @@
      */
     updateFollowers: function(viewObj, behavior, value) {
       var _this = this,
-      synchronizedWindowGroup = _this.synchronizedWindows.byWindow[viewObj.windowId],
-      lgData = _this.synchronizedWindows.byGroup[synchronizedWindowGroup],
+      syncWindowGroup = _this.syncWindows.byWindow[viewObj.windowId],
+      lgData = _this.syncWindows.byGroup[syncWindowGroup],
       lgViews,
       lgSettings,
       uiElt;

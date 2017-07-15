@@ -1,4 +1,4 @@
-var MiradorSynchronizedWindows = {
+var MiradorSyncWindows = {
 
     locales: {
         en: {
@@ -16,18 +16,18 @@ var MiradorSynchronizedWindows = {
 
         mainMenu: Mirador.Handlebars.compile([
             '<li>',
-              '<a href="javascript:;" class="toggle-synchronized-window-groups mainmenu-button" title="{{t "mainMenuButtonTooltip"}}">',
+              '<a href="javascript:;" class="sync-windows mainmenu-button" title="{{t "mainMenuButtonTooltip"}}">',
                 '<span class="fa fa-lock fa-lg fa-fw"></span> {{t "mainMenuButtonText"}}',
               '</a>',
             '</li>'
         ].join('')),
 
         window: Mirador.Handlebars.compile([
-            '<a href="javascript:;" class="mirador-btn mirador-icon-synchronized-window-groups mirador-tooltip" title="{{t "windowDropdownTooltip"}}">',
+            '<a href="javascript:;" class="mirador-btn mirador-icon-sync-windows mirador-tooltip" title="{{t "windowDropdownTooltip"}}">',
               '<i class="fa fa-lock fa-lg fa-fw"></i>',
               '<i class="fa fa-caret-down"></i>',
-              '<ul class="dropdown synchronized-window-groups">',
-                '<li class="no-lock remove-from-synchronized-window-group"><i class="fa fa-ban fa-lg fa-fw"></i> {{t "windowDropdownItemText"}}</li>',
+              '<ul class="dropdown sync-window-groups">',
+                '<li class="no-lock remove-from-sync-window-group"><i class="fa fa-ban fa-lg fa-fw"></i> {{t "windowDropdownItemText"}}</li>',
               '</ul>',
             '</a>',
         ].join(''))
@@ -60,10 +60,10 @@ var MiradorSynchronizedWindows = {
                 // but it's not, so we have to worry about the order of these two statements
                 this.element.find('.mirador-main-menu').prepend(self.templates.mainMenu());
 
-                this.element.find('.toggle-synchronized-window-groups').on('click', function() {
-                    _this.eventEmitter.publish('TOGGLE_SYNCHRONIZED_WINDOW_GROUPS_PANEL');
+                this.element.find('.sync-windows').on('click', function() {
+                    _this.eventEmitter.publish('toggleSyncWindowsPanel');
                     //remove active class from other buttons
-                    _this.element.find('.synchronized-window-groups').removeClass('active');
+                    _this.element.find('.sync-window-groups').removeClass('active');
                     if (jQuery(this).hasClass('active')) {
                         jQuery(this).removeClass('active');
                     } else {
@@ -84,7 +84,7 @@ var MiradorSynchronizedWindows = {
                 var _this = this;
                 setupViewer.apply(this, arguments);
 
-                this.synchronizedWindowGroupsPanel = new $.SynchronizedWindowsPanel({
+                this.syncWindowsPanel = new $.SyncWindowsPanel({
                     appendTo: this.element.find('.mirador-viewer'),
                     state: this.state,
                     eventEmitter: this.eventEmitter
@@ -95,18 +95,18 @@ var MiradorSynchronizedWindows = {
                 var _this = this;
                 listenForActions.apply(this, arguments);
 
-                this.eventEmitter.subscribe('TOGGLE_SYNCHRONIZED_WINDOW_GROUPS_PANEL', function(event) {
-                    _this.toggleSynchronizedWindowGroupsPanel();
+                this.eventEmitter.subscribe('toggleSyncWindowsPanel', function(event) {
+                    _this.toggleSyncWindowsPanel();
                 });
             };
 
             /*
              * TODO: document
              */
-            $.Viewer.prototype.toggleSynchronizedWindowGroupsPanel = function() {
-                this.toggleOverlay('synchronizedWindowGroupsPanelVisible');
+            $.Viewer.prototype.toggleSyncWindowsPanel = function() {
+                this.toggleOverlay('syncWindowsPanelVisible');
                 // TODO: do we need to do refresh every time?
-                jQuery('#synchronized-window-groups-accordion').accordion('refresh');
+                jQuery('#sync-windows-accordion').accordion('refresh');
             };
         })(Mirador);
 
@@ -133,6 +133,7 @@ var MiradorSynchronizedWindows = {
                         }
                     });
 
+                    /*
                     this.element.find('.mirador-osd-next').on('click', function() {
                         if (_this.leading) {
                         }
@@ -145,6 +146,7 @@ var MiradorSynchronizedWindows = {
                         if (_this.leading) {
                         }
                     });
+                    */
                     this.element.find('.mirador-osd-up').on('click', function() {
                         if (_this.leading) {
                         }
@@ -161,6 +163,7 @@ var MiradorSynchronizedWindows = {
                         if (_this.leading) {
                         }
                     });
+                    /*
                     this.element.find('.mirador-osd-zoom-in').on('click', function() {
                         if (_this.leading) {
                         }
@@ -169,6 +172,7 @@ var MiradorSynchronizedWindows = {
                         if (_this.leading) {
                         }
                     });
+                    */
                     this.element.find('.mirador-osd-rotate-right').on('click', function() {
                         if (_this.leading) {
                             _this.eventEmitter.publish('syncWindowRotation', {viewObj: _this, value: 90});
@@ -263,6 +267,7 @@ var MiradorSynchronizedWindows = {
                     osd.viewport.setRotation(currentRotation + degrees);
                   }
                 };
+
                 //set the original values for all of the CSS filter options
                 $[viewType].prototype.filterValues = {
                   "brightness" : "brightness(100%)",
@@ -284,6 +289,7 @@ var MiradorSynchronizedWindows = {
                     '-ms-filter'     : filterCSS
                   });
                 };
+
                 $[viewType].prototype.resetImageManipulationControls = function() {
                     //reset rotation
                     if (this.osd) {
@@ -317,111 +323,111 @@ var MiradorSynchronizedWindows = {
                 };
 
                 // Instead of doing this, want to be able to pass osd handlers to osd
+                // Copied from ImageView
+                // TODO: give BookView the createOpenSeadragonInstance from BookView, not ImageView
                 // e.g., a param called handlers:
                 // { 'open': function() {}, 'pan': [function() {}, function() {}] }
-
                 $[viewType].prototype.createOpenSeadragonInstance = function(imageUrl) {
-      var infoJsonUrl = imageUrl + '/info.json',
-      uniqueID = $.genUUID(),
-      osdID = 'mirador-osd-' + uniqueID,
-      infoJson,
-      _this = this;
+                    var infoJsonUrl = imageUrl + '/info.json',
+                    uniqueID = $.genUUID(),
+                    osdID = 'mirador-osd-' + uniqueID,
+                    infoJson,
+                    _this = this;
 
-      this.element.find('.' + this.osdCls).remove();
+                    this.element.find('.' + this.osdCls).remove();
 
-      jQuery.getJSON(infoJsonUrl).done(function (infoJson, status, jqXHR) {
-        _this.elemOsd =
-          jQuery('<div/>')
-        .addClass(_this.osdCls)
-        .attr('id', osdID)
-        .appendTo(_this.element);
+                    jQuery.getJSON(infoJsonUrl).done(function (infoJson, status, jqXHR) {
+                        _this.elemOsd =
+                            jQuery('<div/>')
+                            .addClass(_this.osdCls)
+                            .attr('id', osdID)
+                            .appendTo(_this.element);
 
-        _this.osd = $.OpenSeadragon({
-          'id':           osdID,
-          'tileSources':  infoJson,
-          'uniqueID' : uniqueID
-        });
+                        _this.osd = $.OpenSeadragon({
+                          'id':           osdID,
+                          'tileSources':  infoJson,
+                          'uniqueID' : uniqueID
+                        });
 
-        _this.osd.addHandler('zoom', $.debounce(function(){
-          var point = { 
-            'x': -10000000,
-            'y': -10000000
-          };
-          _this.eventEmitter.publish('updateTooltips.' + _this.windowId, [point, point]);
-        }, 30));
+                        _this.osd.addHandler('zoom', $.debounce(function(){
+                          var point = { 
+                            'x': -10000000,
+                            'y': -10000000
+                          };
+                          _this.eventEmitter.publish('updateTooltips.' + _this.windowId, [point, point]);
+                        }, 30));
 
-        _this.osd.addHandler('zoom', function(){
-          // tell sync window controller to move any synchronized views
-          if (_this.leading) {
-            _this.eventEmitter.publish('syncWindowZoom', _this);
-          }
-        });
-        _this.osd.addHandler('pan', $.debounce(function(){
-          var point = { 
-            'x': -10000000,
-            'y': -10000000
-          };
-          _this.eventEmitter.publish('updateTooltips.' + _this.windowId, [point, point]);
-        }, 30));
+                        _this.osd.addHandler('zoom', function(){
+                          // tell sync window controller to move any synchronized views
+                          if (_this.leading) {
+                            _this.eventEmitter.publish('syncWindowZoom', _this);
+                          }
+                        });
+                        _this.osd.addHandler('pan', $.debounce(function(){
+                          var point = { 
+                            'x': -10000000,
+                            'y': -10000000
+                          };
+                          _this.eventEmitter.publish('updateTooltips.' + _this.windowId, [point, point]);
+                        }, 30));
 
-        _this.osd.addHandler('pan', function(){
-          // tell sync window controller to move any synchronized views
-          if (_this.leading) {
-            _this.eventEmitter.publish('syncWindowPan', _this);
-          }
-        });
-        _this.osd.addHandler('open', function(){
-          _this.eventEmitter.publish('osdOpen.'+_this.windowId);
-          if (_this.osdOptions.osdBounds) {
-            var rect = new OpenSeadragon.Rect(_this.osdOptions.osdBounds.x, _this.osdOptions.osdBounds.y, _this.osdOptions.osdBounds.width, _this.osdOptions.osdBounds.height);
-            _this.osd.viewport.fitBounds(rect, true);
-          } else {
-            // else reset bounds for this image
-            _this.setBounds();
-          }
+                        _this.osd.addHandler('pan', function(){
+                          // tell sync window controller to move any synchronized views
+                          if (_this.leading) {
+                            _this.eventEmitter.publish('syncWindowPan', _this);
+                          }
+                        });
+                        _this.osd.addHandler('open', function(){
+                          _this.eventEmitter.publish('osdOpen.'+_this.windowId);
+                          if (_this.osdOptions.osdBounds) {
+                            var rect = new OpenSeadragon.Rect(_this.osdOptions.osdBounds.x, _this.osdOptions.osdBounds.y, _this.osdOptions.osdBounds.width, _this.osdOptions.osdBounds.height);
+                            _this.osd.viewport.fitBounds(rect, true);
+                          } else {
+                            // else reset bounds for this image
+                            _this.setBounds();
+                          }
 
-          if (_this.boundsToFocusOnNextOpen) {
-            _this.eventEmitter.publish('fitBounds.' + _this.windowId, _this.boundsToFocusOnNextOpen);
-            _this.boundsToFocusOnNextOpen = null;
-          }
+                          if (_this.boundsToFocusOnNextOpen) {
+                            _this.eventEmitter.publish('fitBounds.' + _this.windowId, _this.boundsToFocusOnNextOpen);
+                            _this.boundsToFocusOnNextOpen = null;
+                          }
 
-          _this.addAnnotationsLayer(_this.elemAnno);
+                          _this.addAnnotationsLayer(_this.elemAnno);
 
-          // get the state before resetting it so we can get back to that state
-          var originalState = _this.hud.annoState.current;
-          var selected = _this.element.find('.mirador-osd-edit-mode.selected');
-          var shape = null;
-          if (selected) {
-            shape = selected.find('.material-icons').html();
-          }
-          if (originalState === 'none') {
-            _this.hud.annoState.startup();
-          } else if (originalState === 'off' || _this.annotationState === 'off') {
-            //original state is off, so don't need to do anything
-          } else {
-            _this.hud.annoState.displayOff();
-          }
+                          // get the state before resetting it so we can get back to that state
+                          var originalState = _this.hud.annoState.current;
+                          var selected = _this.element.find('.mirador-osd-edit-mode.selected');
+                          var shape = null;
+                          if (selected) {
+                            shape = selected.find('.material-icons').html();
+                          }
+                          if (originalState === 'none') {
+                            _this.hud.annoState.startup();
+                          } else if (originalState === 'off' || _this.annotationState === 'off') {
+                            //original state is off, so don't need to do anything
+                          } else {
+                            _this.hud.annoState.displayOff();
+                          }
 
-          if (originalState === 'pointer' || _this.annotationState === 'on') {
-            _this.hud.annoState.displayOn();
-          } else if (originalState === 'shape') {
-            _this.hud.annoState.displayOn();
-            _this.hud.annoState.chooseShape(shape);
-          } else {
-            //original state is off, so don't need to do anything
-          }
+                          if (originalState === 'pointer' || _this.annotationState === 'on') {
+                            _this.hud.annoState.displayOn();
+                          } else if (originalState === 'shape') {
+                            _this.hud.annoState.displayOn();
+                            _this.hud.annoState.chooseShape(shape);
+                          } else {
+                            //original state is off, so don't need to do anything
+                          }
 
-          _this.osd.addHandler('zoom', $.debounce(function() {
-            _this.setBounds();
-          }, 500));
+                          _this.osd.addHandler('zoom', $.debounce(function() {
+                            _this.setBounds();
+                          }, 500));
 
-          _this.osd.addHandler('pan', $.debounce(function(){
-            _this.setBounds();
-          }, 500));
-        });
-
-            });
-            };
+                          _this.osd.addHandler('pan', $.debounce(function(){
+                            _this.setBounds();
+                          }, 500));
+                        });
+                    });
+                };
             });
         })(Mirador);
 
@@ -429,15 +435,13 @@ var MiradorSynchronizedWindows = {
          * Mirador.Workspace
          */
         (function($) {
-            // Pass the following to the constructor, or initialized it some way in a property
-            // EXTEND THE INIT METHOD, this is the easiest way
             var init = $.Workspace.prototype.init;
 
             $.Workspace.prototype.init = function() {
                 var _this = this;
                 init.apply(this, arguments);
 
-                this.synchronizedWindowController = new $.SynchronizedWindowsController({
+                this.syncWindowsController = new $.SyncWindowsController({
                     state: this.state,
                     eventEmitter: this.eventEmitter
                 })
@@ -456,10 +460,9 @@ var MiradorSynchronizedWindows = {
 
             $.Window.prototype.init = function() {
                 var _this = this;
-
                 init.apply(this, arguments);
 
-                this.eventEmitter.publish('windowReadyForSynchronizedWindowGroups');
+                this.eventEmitter.publish('windowReadyForSyncWindowGroups');
             };
 
             $.Window.prototype.listenForActions = function() {
@@ -477,23 +480,23 @@ var MiradorSynchronizedWindows = {
                 /*
                  * Calls the D3 rendering method to dynamically add li's.
                  */
-                _this.events.push(_this.eventEmitter.subscribe('updateSynchronizedWindowGroupMenus', function(event, data) {
-                    _this.renderSynchronizedWindowGroupMenu(data.keys);
+                _this.events.push(_this.eventEmitter.subscribe('updateSyncWindowGroupMenus', function(event, data) {
+                    _this.renderSyncWindowGroupMenu(data.keys);
                 }));
 
                 /*
-                 * Activates the li with innerHTML that matches the given synchronizedWindowGroup, inside of the window whose
+                 * Activates the li with innerHTML that matches the given syncWindowGroup, inside of the window whose
                  * viewobject has the given windowId
                  *
                  * @param {Object} data Contains:
                  *     groupId {string} The name of the window group
                  */
-                _this.events.push(_this.eventEmitter.subscribe('activateSynchronizedWindowGroupMenuItem.' + _this.id, function(event, groupId) {
+                _this.events.push(_this.eventEmitter.subscribe('activateSyncWindowGroupMenuItem.' + _this.id, function(event, groupId) {
                     // check if this window has the window id
                     // if so, set the li with the innerHTML that has groupId
-                    _this.element.find('.add-to-synchronized-window-group').each(function(i, e) {
+                    _this.element.find('.add-to-sync-window-group').each(function(i, e) {
                         if (e.innerHTML === groupId) {
-                            jQuery(this).parent().children('.add-to-synchronized-window-group').removeClass('current-group');
+                            jQuery(this).parent().children('.add-to-sync-window-group').removeClass('current-group');
                             jQuery(this).addClass('current-group');
                         }
                     });
@@ -517,71 +520,71 @@ var MiradorSynchronizedWindows = {
                 this.element.find('.window-manifest-navigation').prepend(self.templates.window());
 
                 // onclick event to add the window to the selected synchronized window group
-                this.element.find('.add-to-synchronized-window-group').on('click', function(event) {
-                    _this.addToSynchronizedWindowGroup(this);
+                this.element.find('.add-to-sync-window-group').on('click', function(event) {
+                    _this.addToSyncWindowGroup(this);
                 });
 
                 // onclick event to remove the window from its synchronized window group
-                this.element.find('.remove-from-synchronized-window-group').on('click', function(event) {
-                    _this.removeFromSynchronizedWindowGroup(this);
+                this.element.find('.remove-from-sync-window-group').on('click', function(event) {
+                    _this.removeFromSyncWindowGroup(this);
                 });
 
                 // show/hide synchronized window group menu (window-level)
-                this.element.find('.mirador-icon-synchronized-window-groups').off('mouseenter').on('mouseenter', function() {
-                    _this.element.find('.synchronized-window-groups').stop().slideFadeToggle(300);
+                this.element.find('.mirador-icon-sync-windows').off('mouseenter').on('mouseenter', function() {
+                    _this.element.find('.sync-window-groups').stop().slideFadeToggle(300);
                 }).off('mouseleave').on('mouseleave', function() {
-                    _this.element.find('.synchronized-window-groups').stop().slideFadeToggle(300);
+                    _this.element.find('.sync-window-groups').stop().slideFadeToggle(300);
                 });
             };
             
-    $.Window.prototype.addToSynchronizedWindowGroup = function(elt, replacing) {
-      var lg;
-      if (replacing === true) {
-        lg = jQuery(elt).parent().children('.add-to-synchronized-window-group.current-group').text();
+            $.Window.prototype.addToSyncWindowGroup = function(elt, replacing) {
+              var lg;
+              if (replacing === true) {
+                lg = jQuery(elt).parent().children('.add-to-sync-window-group.current-group').text();
 
-        // if no lg, do nothing
-        if (lg === '') {
-          return;
-        }
-      }
-      else {
-        lg = jQuery(elt).text();
-      }
-      this.eventEmitter.publish('addToSynchronizedWindowGroup', {viewObj: this.focusModules[this.currentImageMode], synchronizedWindowGroup: lg});
-      jQuery(elt).parent().children('.add-to-synchronized-window-group').removeClass('current-group');
-      jQuery(elt).addClass('current-group');
-    };
+                // if no lg, do nothing
+                if (lg === '') {
+                  return;
+                }
+              }
+              else {
+                lg = jQuery(elt).text();
+              }
+              this.eventEmitter.publish('addToSyncWindowGroup', {viewObj: this.focusModules[this.currentImageMode], syncWindowGroup: lg});
+              jQuery(elt).parent().children('.add-to-sync-window-group').removeClass('current-group');
+              jQuery(elt).addClass('current-group');
+            };
 
-    $.Window.prototype.removeFromSynchronizedWindowGroup = function(elt) {
-      var viewObj = this.focusModules[this.currentImageMode];
-      if (viewObj !== null) {
-        this.eventEmitter.publish('removeFromSynchronizedWindowGroup', {'viewObj': viewObj});
-        jQuery(elt).parent().children('.add-to-synchronized-window-group').removeClass('current-group');
-      }
-    };
+            $.Window.prototype.removeFromSyncWindowGroup = function(elt) {
+              var viewObj = this.focusModules[this.currentImageMode];
+              if (viewObj !== null) {
+                this.eventEmitter.publish('removeFromSyncWindowGroup', {'viewObj': viewObj});
+                jQuery(elt).parent().children('.add-to-sync-window-group').removeClass('current-group');
+              }
+            };
 
-    /*
-     * Use D3 to dynamically render the window-level synchronized window group menu.
-     *
-     * @param {Array} synchronizedWindowGroupNames An array of strings that represent the synchronized window group names
-     */
-    $.Window.prototype.renderSynchronizedWindowGroupMenu = function(synchronizedWindowGroupNames) {
-      // each menu in the window should get a dropdown with items in the 'data' array
-      var _this = this,
-      synchronizedWindowGroups = d3.select(this.element[0]).select('.synchronized-window-groups').selectAll('.synchronized-window-groups-item')
-        .data(synchronizedWindowGroupNames, function(d) { return d; });
-      synchronizedWindowGroups.enter().append('li')
-        .classed({'synchronized-window-groups-item': true, 'add-to-synchronized-window-group': true})
-        .text(function(d) { return d; })
-        .on('click', function() {
-          _this.addToSynchronizedWindowGroup(this);
-        });
-      synchronizedWindowGroups.exit().remove();
-    };
+            /*
+             * Use D3 to dynamically render the window-level synchronized window group menu.
+             *
+             * @param {Array} syncWindowGroupNames An array of strings that represent the synchronized window group names
+             */
+            $.Window.prototype.renderSyncWindowGroupMenu = function(syncWindowGroupNames) {
+              // each menu in the window should get a dropdown with items in the 'data' array
+              var _this = this,
+              syncWindowGroups = d3.select(this.element[0]).select('.sync-window-groups').selectAll('.sync-window-groups-item')
+                .data(syncWindowGroupNames, function(d) { return d; });
+              syncWindowGroups.enter().append('li')
+                .classed({'sync-window-groups-item': true, 'add-to-sync-window-group': true})
+                .text(function(d) { return d; })
+                .on('click', function() {
+                  _this.addToSyncWindowGroup(this);
+                });
+              syncWindowGroups.exit().remove();
+            };
         })(Mirador);
     }
 };
 
 $(document).ready(function() {
-    MiradorSynchronizedWindows.init();
+    MiradorSyncWindows.init();
 });

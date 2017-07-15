@@ -9,7 +9,7 @@
    *   state: global state object
    *   eventEmitter: event message queue
    */
-  $.SynchronizedWindowsPanel = function(options) {
+  $.SyncWindowsPanel = function(options) {
 
     jQuery.extend(true, this, {
       element: null,
@@ -111,7 +111,7 @@
     this.init();
   };
 
-  $.SynchronizedWindowsPanel.prototype = {
+  $.SyncWindowsPanel.prototype = {
     init: function () {
 
       // TODO: pass saved data into template upon restoring a workspace
@@ -121,33 +121,33 @@
       this.listenForActions();
 
       // initialize accordion
-      jQuery('#synchronized-window-groups-accordion').accordion({collapsible: true});
+      jQuery('#sync-windows-accordion').accordion({collapsible: true});
 
-      // tell lockController that the panel is ready to receive info about the synchronizedWindowGroups
-      this.eventEmitter.publish('synchronizedWindowGroupsPanelReady');
+      // tell lockController that the panel is ready to receive info about the syncWindowGroups
+      this.eventEmitter.publish('syncWindowsPanelReady');
     },
 
     listenForActions: function() {
       var _this = this;
 
-      _this.eventEmitter.subscribe('synchronizedWindowGroupsPanelVisible.set', function(_, stateValue) {
+      _this.eventEmitter.subscribe('syncWindowsPanelVisible.set', function(_, stateValue) {
         if (stateValue) { _this.show(); return; }
         _this.hide();
       });
 
       // dynamically add or remove list items to/from the accordion menu
-      _this.eventEmitter.subscribe('updateSynchronizedWindowGroupMenus', function(event, lg) {
+      _this.eventEmitter.subscribe('updateSyncWindowGroupMenus', function(event, lg) {
         var keys,
-        synchronizedWindowGroupsLi,
-        synchronizedWindowGroupsLiForm;
+        syncWindowGroupsLi,
+        syncWindowGroupsLiForm;
 
         keys = lg.keys;
 
-        synchronizedWindowGroupsLi = d3.select(_this.element[0]).select('#synchronized-window-groups-accordion')
+        syncWindowGroupsLi = d3.select(_this.element[0]).select('#sync-windows-accordion')
           .selectAll('li')
           .data(keys, function(d) { return d; });
 
-        synchronizedWindowGroupsLi.enter()
+        syncWindowGroupsLi.enter()
           .append('li')
           .append('h4')
             .text(function(d) { return d; })
@@ -183,7 +183,7 @@
                     }
                   })
                   .on('change', function() {
-                    _this.eventEmitter.publish('toggleSynchronizedWindowGroupSettings', {
+                    _this.eventEmitter.publish('toggleSyncWindowGroupSettings', {
                       groupID: jQuery(this).parent().parent().find('h4').text(),
                       key: jQuery(this).attr('name')
                     });
@@ -218,17 +218,17 @@
                 .select(function() { return this.parentNode; })
               .append('a')
                 .attr('href', 'javascript:;')
-                .classed({'mirador-btn': true, 'mirador-icon-delete-synchronized-window-group': true})
+                .classed({'mirador-btn': true, 'mirador-icon-delete-sync-window-group': true})
                 .on('click', function(event) {
-                  _this.eventEmitter.publish('deleteSynchronizedWindowGroup', jQuery(this).parent().parent().find('h4').text());
+                  _this.eventEmitter.publish('deleteSyncWindowGroup', jQuery(this).parent().parent().find('h4').text());
                 })
               .append('i')
                 .classed({'fa': true, 'fa-trash-o': true, 'fa-lg': true});
           });
 
-        synchronizedWindowGroupsLi.exit().remove();
+        syncWindowGroupsLi.exit().remove();
 
-        jQuery('#synchronized-window-groups-accordion').accordion('refresh');
+        jQuery('#sync-windows-accordion').accordion('refresh');
       });
     },
 
@@ -236,14 +236,14 @@
       var _this = this;
 
       // onclick event for adding a lock group
-      _this.element.find('.mirador-icon-create-synchronized-window-group').off('click').on('click', function(event) {
-        var input = jQuery('#new-synchronized-window-group-name').val();
+      _this.element.find('.mirador-icon-create-sync-window-group').off('click').on('click', function(event) {
+        var input = jQuery('#new-sync-window-group-name').val();
 
         // TODO: do better input validation?
         if (input.length > 0) {
           // make the text field blank and submit the saved value to the controller
-          jQuery('#new-synchronized-window-group-name').val('');
-          _this.eventEmitter.publish('createSynchronizedWindowGroup', input);
+          jQuery('#new-sync-window-group-name').val('');
+          _this.eventEmitter.publish('createSyncWindowGroup', input);
         }
         else {
           alert('Please choose a name with non-zero length.');
@@ -260,15 +260,15 @@
     },
 
     template: Handlebars.compile([
-      '<div id="synchronized-window-groups-panel">',
+      '<div id="sync-windows-panel">',
         '<h3>Manage Synchronized Windows</h3>',
         '<span>Window Group Name: ',
-          '<input id="new-synchronized-window-group-name" type="text">',
-          '<a href="javascript:;" class="mirador-btn mirador-icon-create-synchronized-window-group">',
+          '<input id="new-sync-window-group-name" type="text">',
+          '<a href="javascript:;" class="mirador-btn mirador-icon-create-sync-window-group">',
             '<i class="fa fa-plus fa-lg"></i>',
           '</a>',
         '</span>',
-        '<ul id="synchronized-window-groups-accordion"></ul>',
+        '<ul id="sync-windows-accordion"></ul>',
       '</div>'
     ].join(''))
   };
