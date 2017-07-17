@@ -17,14 +17,14 @@ var MiradorSyncWindows = {
         mainMenu: Mirador.Handlebars.compile([
             '<li>',
               '<a href="javascript:;" class="sync-windows mainmenu-button" title="{{t "mainMenuButtonTooltip"}}">',
-                '<span class="fa fa-lock fa-lg fa-fw"></span> {{t "mainMenuButtonText"}}',
+                '<span class="fa fa-sitemap fa-lg fa-fw"></span> {{t "mainMenuButtonText"}}',
               '</a>',
             '</li>'
         ].join('')),
 
         window: Mirador.Handlebars.compile([
             '<a href="javascript:;" class="mirador-btn mirador-icon-sync-windows mirador-tooltip" title="{{t "windowDropdownTooltip"}}">',
-              '<i class="fa fa-lock fa-lg fa-fw"></i>',
+              '<i class="fa fa-sitemap fa-lg fa-fw"></i>',
               '<i class="fa fa-caret-down"></i>',
               '<ul class="dropdown sync-window-groups">',
                 '<li class="no-lock remove-from-sync-window-group"><i class="fa fa-ban fa-lg fa-fw"></i> {{t "windowDropdownItemText"}}</li>',
@@ -49,15 +49,14 @@ var MiradorSyncWindows = {
          */
         (function($) {
 
-            var bindEvents = $.MainMenu.prototype.bindEvents,
-                init = $.MainMenu.prototype.init;
+            var bindEvents = $.MainMenu.prototype.bindEvents;
 
             $.MainMenu.prototype.bindEvents = function() {
                 var _this = this;
                 bindEvents.apply(this, arguments);
 
                 // TODO: all Mirador module templates should be available as a string instead of a compiled template, so that the template property can be extended
-                // but it's not, so we have to worry about the order of these two statements
+                // but it's not, so we have to make sure the element gets added to the DOM before attempting to attach an event handler
                 this.element.find('.mirador-main-menu').prepend(self.templates.mainMenu());
 
                 this.element.find('.sync-windows').on('click', function() {
@@ -77,7 +76,9 @@ var MiradorSyncWindows = {
          * Mirador.Viewer
          */
         (function($) {
-            var setupViewer = $.Viewer.prototype.setupViewer,
+            var constructor = $.Viewer,
+                prototype = $.Viewer.prototype,
+                setupViewer = $.Viewer.prototype.setupViewer,
                 listenForActions = $.Viewer.prototype.listenForActions;
 
             $.Viewer.prototype.setupViewer = function() {
@@ -108,6 +109,15 @@ var MiradorSyncWindows = {
                 // TODO: do we need to do refresh every time?
                 jQuery('#sync-windows-accordion').accordion('refresh');
             };
+
+            $.Viewer = function() {
+                return new constructor(jQuery.extend(true, Array.prototype.slice.call(arguments)[0], {
+                    overlayStates: {
+                        'syncWindowsPanelVisible': false
+                    }
+                }));
+            };
+            $.Viewer.prototype = prototype;
         })(Mirador);
 
         /*
@@ -133,46 +143,6 @@ var MiradorSyncWindows = {
                         }
                     });
 
-                    /*
-                    this.element.find('.mirador-osd-next').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    this.element.find('.mirador-osd-previous').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    this.element.find('.mirador-osd-go-home').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    */
-                    this.element.find('.mirador-osd-up').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    this.element.find('.mirador-osd-right').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    this.element.find('.mirador-osd-down').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    this.element.find('.mirador-osd-left').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    /*
-                    this.element.find('.mirador-osd-zoom-in').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    this.element.find('.mirador-osd-zoom-out').on('click', function() {
-                        if (_this.leading) {
-                        }
-                    });
-                    */
                     this.element.find('.mirador-osd-rotate-right').on('click', function() {
                         if (_this.leading) {
                             _this.eventEmitter.publish('syncWindowRotation', {viewObj: _this, value: 90});
@@ -221,7 +191,7 @@ var MiradorSyncWindows = {
                     });
                 };
 
-                
+                // TODO: change Mirador so that this is a member function of $[viewType]
                 /*
                  * Applies a CSS filter according to specified behavior.
                  *
@@ -260,6 +230,7 @@ var MiradorSyncWindows = {
                   this.setFilterCSS();
                 };
 
+                // TODO: change Mirador so that this is a member function of $[viewType]
                 $[viewType].prototype.osdRotate = function(degrees) {
                   var osd = this.osd;
                   if (osd) {
@@ -268,6 +239,7 @@ var MiradorSyncWindows = {
                   }
                 };
 
+                // TODO: change Mirador so that this is a member function of $[viewType]
                 //set the original values for all of the CSS filter options
                 $[viewType].prototype.filterValues = {
                   "brightness" : "brightness(100%)",
@@ -277,6 +249,7 @@ var MiradorSyncWindows = {
                   "invert" : "invert(0%)"
                 };
 
+                // TODO: change Mirador so that this is a member function of $[viewType]
                 $[viewType].prototype.setFilterCSS = function() {
                   var _this = this,
                   filterCSS = jQuery.map(_this.filterValues, function(value, key) { return value; }).join(" "),
@@ -290,6 +263,7 @@ var MiradorSyncWindows = {
                   });
                 };
 
+                // TODO: change Mirador so that this is a member function of $[viewType]
                 $[viewType].prototype.resetImageManipulationControls = function() {
                     //reset rotation
                     if (this.osd) {
