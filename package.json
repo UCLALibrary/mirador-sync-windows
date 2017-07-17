@@ -1,0 +1,29 @@
+{
+  "name": "mirador-sync-windows",
+  "version": "0.1.0",
+  "description": "A Mirador plugin that allows users to mirror actions performed in one window in one or more other windows.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UCLALibrary/mirador-sync-windows.git"
+  },
+  "keywords": [
+    "iiif",
+    "mirador",
+    "mirador-plugins"
+  ],
+  "author": "Mark Allen Matney, Jr.",
+  "bugs": {
+    "url": "https://github.com/UCLALibrary/mirador-sync-windows/issues"
+  },
+  "homepage": "https://github.com/UCLALibrary/mirador-sync-windows#readme",
+  "devDependencies": {
+    "del": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-clean-css": "^3.7.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-uglify": "^3.0.0"
+  }
+}
