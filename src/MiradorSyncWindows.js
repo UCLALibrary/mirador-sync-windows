@@ -69,7 +69,7 @@ var MiradorSyncWindows = {
                         jQuery(this).addClass('active');
                     }
                 });
-            }; 
+            };
         })(Mirador);
 
         /*
@@ -295,114 +295,148 @@ var MiradorSyncWindows = {
 
                     this.setFilterCSS();
                 };
-
-                // Instead of doing this, want to be able to pass osd handlers to osd
-                // Copied from ImageView
-                // TODO: give BookView the createOpenSeadragonInstance from BookView, not ImageView
-                // e.g., a param called handlers:
-                // { 'open': function() {}, 'pan': [function() {}, function() {}] }
-                $[viewType].prototype.createOpenSeadragonInstance = function(imageUrl) {
-                    var infoJsonUrl = imageUrl + '/info.json',
-                    uniqueID = $.genUUID(),
-                    osdID = 'mirador-osd-' + uniqueID,
-                    infoJson,
-                    _this = this;
-
-                    this.element.find('.' + this.osdCls).remove();
-
-                    jQuery.getJSON(infoJsonUrl).done(function (infoJson, status, jqXHR) {
-                        _this.elemOsd =
-                            jQuery('<div/>')
-                            .addClass(_this.osdCls)
-                            .attr('id', osdID)
-                            .appendTo(_this.element);
-
-                        _this.osd = $.OpenSeadragon({
-                          'id':           osdID,
-                          'tileSources':  infoJson,
-                          'uniqueID' : uniqueID
-                        });
-
-                        _this.osd.addHandler('zoom', $.debounce(function(){
-                          var point = { 
-                            'x': -10000000,
-                            'y': -10000000
-                          };
-                          _this.eventEmitter.publish('updateTooltips.' + _this.windowId, [point, point]);
-                        }, 30));
-
-                        _this.osd.addHandler('zoom', function(){
-                          // tell sync window controller to move any synchronized views
-                          if (_this.leading) {
-                            _this.eventEmitter.publish('syncWindowZoom', _this);
-                          }
-                        });
-                        _this.osd.addHandler('pan', $.debounce(function(){
-                          var point = { 
-                            'x': -10000000,
-                            'y': -10000000
-                          };
-                          _this.eventEmitter.publish('updateTooltips.' + _this.windowId, [point, point]);
-                        }, 30));
-
-                        _this.osd.addHandler('pan', function(){
-                          // tell sync window controller to move any synchronized views
-                          if (_this.leading) {
-                            _this.eventEmitter.publish('syncWindowPan', _this);
-                          }
-                        });
-                        _this.osd.addHandler('open', function(){
-                          _this.eventEmitter.publish('osdOpen.'+_this.windowId);
-                          if (_this.osdOptions.osdBounds) {
-                            var rect = new OpenSeadragon.Rect(_this.osdOptions.osdBounds.x, _this.osdOptions.osdBounds.y, _this.osdOptions.osdBounds.width, _this.osdOptions.osdBounds.height);
-                            _this.osd.viewport.fitBounds(rect, true);
-                          } else {
-                            // else reset bounds for this image
-                            _this.setBounds();
-                          }
-
-                          if (_this.boundsToFocusOnNextOpen) {
-                            _this.eventEmitter.publish('fitBounds.' + _this.windowId, _this.boundsToFocusOnNextOpen);
-                            _this.boundsToFocusOnNextOpen = null;
-                          }
-
-                          _this.addAnnotationsLayer(_this.elemAnno);
-
-                          // get the state before resetting it so we can get back to that state
-                          var originalState = _this.hud.annoState.current;
-                          var selected = _this.element.find('.mirador-osd-edit-mode.selected');
-                          var shape = null;
-                          if (selected) {
-                            shape = selected.find('.material-icons').html();
-                          }
-                          if (originalState === 'none') {
-                            _this.hud.annoState.startup();
-                          } else if (originalState === 'off' || _this.annotationState === 'off') {
-                            //original state is off, so don't need to do anything
-                          } else {
-                            _this.hud.annoState.displayOff();
-                          }
-
-                          if (originalState === 'pointer' || _this.annotationState === 'on') {
-                            _this.hud.annoState.displayOn();
-                          } else if (originalState === 'shape') {
-                            _this.hud.annoState.displayOn();
-                            _this.hud.annoState.chooseShape(shape);
-                          } else {
-                            //original state is off, so don't need to do anything
-                          }
-
-                          _this.osd.addHandler('zoom', $.debounce(function() {
-                            _this.setBounds();
-                          }, 500));
-
-                          _this.osd.addHandler('pan', $.debounce(function(){
-                            _this.setBounds();
-                          }, 500));
-                        });
-                    });
-                };
             });
+        })(Mirador);
+
+        /*
+         * Mirador.ImageView
+         */
+        (function($) {
+            // Add the new zoom handlers
+            var initialiseImageCanvas = $.ImageView.prototype.initialiseImageCanvas;
+
+            $.ImageView.prototype.initialiseImageCanvas = function() {
+                var _this = this;
+                initialiseImageCanvas.apply(this, arguments);
+
+                _this.osd.addHandler('zoom', function(){
+                  // tell sync window controller to move any synchronized views
+                  if (_this.leading) {
+                    _this.eventEmitter.publish('syncWindowZoom', _this);
+                  }
+                });
+
+                _this.osd.addHandler('pan', function(){
+                  // tell sync window controller to move any synchronized views
+                  if (_this.leading) {
+                    _this.eventEmitter.publish('syncWindowPan', _this);
+                  }
+                });
+            };
+            //$.ImageView.prototype = prototype;
+
+        })(Mirador);
+
+        /*
+         * Mirador.BookView
+         */
+        (function($) {
+            // Instead of doing this, want to be able to pass osd handlers to osd
+            // e.g., a param called handlers:
+            // { 'open': function() {}, 'pan': [function() {}, function() {}] }
+            //
+            // TODO: give BookView the createOpenSeadragonInstance from BookView, not ImageView
+            $.BookView.prototype.createOpenSeadragonInstance = function(imageUrl) {
+                var infoJsonUrl = imageUrl + '/info.json',
+                uniqueID = $.genUUID(),
+                osdID = 'mirador-osd-' + uniqueID,
+                infoJson,
+                _this = this;
+
+                this.element.find('.' + this.osdCls).remove();
+
+                jQuery.getJSON(infoJsonUrl).done(function (infoJson, status, jqXHR) {
+                    _this.elemOsd =
+                        jQuery('<div/>')
+                        .addClass(_this.osdCls)
+                        .attr('id', osdID)
+                        .appendTo(_this.element);
+
+                    _this.osd = $.OpenSeadragon({
+                      'id':           osdID,
+                      'tileSources':  infoJson,
+                      'uniqueID' : uniqueID
+                    });
+
+                    _this.osd.addHandler('zoom', $.debounce(function(){
+                      var point = {
+                        'x': -10000000,
+                        'y': -10000000
+                      };
+                      _this.eventEmitter.publish('updateTooltips.' + _this.windowId, [point, point]);
+                    }, 30));
+
+                    _this.osd.addHandler('zoom', function(){
+                      // tell sync window controller to move any synchronized views
+                      if (_this.leading) {
+                        _this.eventEmitter.publish('syncWindowZoom', _this);
+                      }
+                    });
+                    _this.osd.addHandler('pan', $.debounce(function(){
+                      var point = {
+                        'x': -10000000,
+                        'y': -10000000
+                      };
+                      _this.eventEmitter.publish('updateTooltips.' + _this.windowId, [point, point]);
+                    }, 30));
+
+                    _this.osd.addHandler('pan', function(){
+                      // tell sync window controller to move any synchronized views
+                      if (_this.leading) {
+                        _this.eventEmitter.publish('syncWindowPan', _this);
+                      }
+                    });
+                    _this.osd.addHandler('open', function(){
+                      _this.eventEmitter.publish('osdOpen.'+_this.windowId);
+                      if (_this.osdOptions.osdBounds) {
+                        var rect = new OpenSeadragon.Rect(_this.osdOptions.osdBounds.x, _this.osdOptions.osdBounds.y, _this.osdOptions.osdBounds.width, _this.osdOptions.osdBounds.height);
+                        _this.osd.viewport.fitBounds(rect, true);
+                      } else {
+                        // else reset bounds for this image
+                        _this.setBounds();
+                      }
+
+                      if (_this.boundsToFocusOnNextOpen) {
+                        _this.eventEmitter.publish('fitBounds.' + _this.windowId, _this.boundsToFocusOnNextOpen);
+                        _this.boundsToFocusOnNextOpen = null;
+                      }
+
+                      _this.addAnnotationsLayer(_this.elemAnno);
+
+                      // get the state before resetting it so we can get back to that state
+                      var originalState = _this.hud.annoState.current;
+                      var selected = _this.element.find('.mirador-osd-edit-mode.selected');
+                      var shape = null;
+                      if (selected) {
+                        shape = selected.find('.material-icons').html();
+                      }
+                      if (originalState === 'none') {
+                        _this.hud.annoState.startup();
+                      } else if (originalState === 'off' || _this.annotationState === 'off') {
+                        //original state is off, so don't need to do anything
+                      } else {
+                        _this.hud.annoState.displayOff();
+                      }
+
+                      if (originalState === 'pointer' || _this.annotationState === 'on') {
+                        _this.hud.annoState.displayOn();
+                      } else if (originalState === 'shape') {
+                        _this.hud.annoState.displayOn();
+                        _this.hud.annoState.chooseShape(shape);
+                      } else {
+                        //original state is off, so don't need to do anything
+                      }
+
+                      _this.osd.addHandler('zoom', $.debounce(function() {
+                        _this.setBounds();
+                      }, 500));
+
+                      _this.osd.addHandler('pan', $.debounce(function(){
+                        _this.setBounds();
+                      }, 500));
+                    });
+                });
+            };
         })(Mirador);
 
         /*
@@ -510,7 +544,7 @@ var MiradorSyncWindows = {
                     _this.element.find('.sync-window-groups').stop().slideFadeToggle(300);
                 });
             };
-            
+
             $.Window.prototype.addToSyncWindowGroup = function(elt, replacing) {
               var lg;
               if (replacing === true) {
