@@ -4,7 +4,9 @@ When comparing one or more nearly identical images (for example, different spect
 
 ## Setup
 
-Clone this repository and do:
+You can find production-ready build artifacts inside the 'dist/' folder.
+
+Alternatively, clone this repository and do:
 
 ```bash
 npm install
