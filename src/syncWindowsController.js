@@ -50,7 +50,7 @@
 
       if (savedSettings !== undefined) {
         _this.syncWindows = JSON.parse(savedSettings);
-        // the views array will be restored by each window, starting with the restoreWindowToSyncWindowGroups
+        // the views array will be restored by each window, starting with the restoreWindowToSyncWindowsController
         // eventEmitter message
       }
       else {
@@ -305,7 +305,7 @@
        *
        * @param {Object} viewObj The viewobject to check
        */
-      _this.eventEmitter.subscribe('restoreWindowToSyncWindowController', function(event, viewObj) {
+      _this.eventEmitter.subscribe('restoreWindowToSyncWindowsController', function(event, viewObj) {
         // check if this window is in a synchronized window group
         var groupID = _this.getSyncWindowGroupOfWindow(viewObj);
         if (groupID !== undefined) {

@@ -471,6 +471,9 @@ var MiradorSyncWindows = {
                 init.apply(this, arguments);
 
                 this.eventEmitter.publish('windowReadyForSyncWindowGroups');
+                if (this.focusModules[this.currentImageMode] !== null) {
+                    this.eventEmitter.publish('restoreWindowToSyncWindowsController', this.focusModules[this.currentImageMode]);
+                }
             };
 
             $.Window.prototype.listenForActions = function() {
@@ -637,7 +640,7 @@ var MiradorSyncWindows = {
                     }
 
                     var serializedLockGroupState = JSON.stringify(lockGroupState, replacer);
-                    _this.set('lockGroupState', serializedLockGroupState, {parent: "currentConfig"});
+                    _this.set('syncWindowGroupsState', serializedLockGroupState, {parent: "currentConfig"});
                 });
             };
         })(Mirador);
